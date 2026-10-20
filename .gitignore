@@ -1,0 +1,20 @@
+# Virtual environments
+ml_env/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Data files & large archives (downloaded dynamically via scripts)
+*.tar.gz
+*.zip
+data/*.csv
+data/*.txt
+data/*.tsv
+brca_metabric/
+metabric_fresh_validation/
+
+# VS Code & OS system files
+.vscode/
+.DS_Store
+*.log
