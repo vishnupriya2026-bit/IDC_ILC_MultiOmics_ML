@@ -3,7 +3,6 @@ cat << 'EOF' > README.md
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Journal Target](https://img.shields.io/badge/Target%20Journal-Computers%20in%20Biology%20and%20Medicine-green.svg)](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine)
 
 Official implementation of the multi-omics machine learning pipeline for subtype classification and prognostic survival stratification of Invasive Ductal Carcinoma (IDC) and Invasive Lobular Carcinoma (ILC).
 
