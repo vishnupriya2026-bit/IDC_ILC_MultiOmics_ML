@@ -98,26 +98,38 @@ suppressMessages(library(mixOmics))
 suppressMessages(library(ggplot2))
 suppressMessages(library(gridExtra))
 
+
+suppressMessages(library(mixOmics))
+suppressMessages(library(ggplot2))
+suppressMessages(library(gridExtra))
+
 dir.create("results/figures", showWarnings = FALSE, recursive = TRUE)
 
-model_obj <- NULL
-if (exists("diablo_model")) { model_obj <- diablo_model }
-if (exists("diablo.fit")) { model_obj <- diablo.fit }
-if (exists("sgccda.res")) { model_obj <- sgccda.res }
+# Automatically find fitted DIABLO object by class
+diablo_obj <- NULL
+all_vars <- ls()
+for (v in all_vars) {
+    obj <- get(v)
+    if (any(c("sgccda", "block.splsda", "block.plsda", "DA") %in% class(obj))) {
+        diablo_obj <- obj
+        break
+    }
+}
+
+if (is.null(diablo_obj)) {
+    stop("Could not locate fitted DIABLO model object in R workspace.")
+}
 
 # 1. Generate plotIndiv without confidence ellipses and without main title
 p_out <- plotIndiv(
-    model_obj, 
+    diablo_obj, 
     ind.names = FALSE, 
     legend = TRUE, 
     ellipse = FALSE, 
     title = ""
 )
 
-# 2. Extract variance explained for variates if available
-var_exp <- model_obj$explained_variance
-
-# 3. Apply manuscript formatting with ggplot2
+# 2. Format with ggplot2 for publication
 if ("graph" %in% names(p_out) && inherits(p_out$graph, "ggplot")) {
     final_plot <- p_out$graph + 
         facet_wrap(~Block, nrow = 1) + 
@@ -125,8 +137,7 @@ if ("graph" %in% names(p_out) && inherits(p_out$graph, "ggplot")) {
             x = "Latent Subspace Variate 1",
             y = "Latent Subspace Variate 2",
             color = "Outcome (Y): Stage",
-            shape = "Outcome (Y): Stage",
-            fill  = "Outcome (Y): Stage"
+            shape = "Outcome (Y): Stage"
         ) + 
         theme_bw(base_size = 13) +
         theme(
@@ -144,10 +155,16 @@ if ("graph" %in% names(p_out) && inherits(p_out$graph, "ggplot")) {
     final_plot <- p_out
 }
 
-# 4. Save 300 DPI high-resolution PNG (15 x 5 inches)
+# 3. Export 300 DPI high-resolution PNG (15 x 5 inches)
 png("results/figures/diablo_subspace.png", width = 15, height = 5, units = "in", res = 300)
 print(final_plot)
 dev.off()
+
+# 4. Export vector PDF for publication submission
+pdf("results/figures/diablo_subspace.pdf", width = 15, height = 5)
+print(final_plot)
+dev.off()
+
 
 # 5. Save vector PDF for publication submission
 pdf("results/figures/diablo_subspace.pdf", width = 15, height = 5)
