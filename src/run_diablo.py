@@ -15,76 +15,14 @@ for d in [ml, r_dir, res_dir]:
     d.mkdir(parents=True, exist_ok=True)
 
 print("[1/3] Smart-repairing RPPA Matrix...")
-target = pd.read_csv(ml / 'target_y.csv', index_col=0)
-ref_samples = [str(s).strip() for s in target.index]
+df_num = pd.read_csv(proc / 'rppa_aligned.csv', index_col=0)
+print(f"      Loaded harmonized RPPA matrix: {df_num.shape[0]} samples x {df_num.shape[1]} protein features")
 
-rppa_raw = pd.read_csv(proc / 'rppa_aligned.csv')
-print(f"      Raw RPPA shape: {rppa_raw.shape[0]} rows x {rppa_raw.shape[1]} columns")
-
-sample_col = None
-max_m = 0
-for col in rppa_raw.columns:
-    matches = rppa_raw[col].astype(str).str.strip().isin(ref_samples).sum()
-    if matches > max_m:
-        max_m = matches
-        sample_col = col
-
-if sample_col and max_m > 5:
-    df_base = rppa_raw.set_index(sample_col)
-else:
-    df_base = rppa_raw.set_index(rppa_raw.columns[0])
-
-# Compare variance across columns in both untransposed and transposed orientation
-num_orig = df_base.apply(pd.to_numeric, errors='coerce')
-var_orig = num_orig.var(axis=0, skipna=True)
-
-num_trans = df_base.T.apply(pd.to_numeric, errors='coerce')
-var_trans = num_trans.var(axis=0, skipna=True)
-
-valid_orig = (var_orig > 1e-8).sum()
-valid_trans = (var_trans > 1e-8).sum()
-
-if valid_trans > valid_orig:
-    print(f"      Variance check: Transposed matrix yields {valid_trans} valid features vs {valid_orig} untransposed. Transposing matrix...")
-    df = df_base.T
-else:
-    df = df_base
-
-df.index = df.index.astype(str).str.strip()
-common_s = [s for s in ref_samples if s in df.index]
-
-if len(common_s) == 0:
-    if len(df) == len(ref_samples):
-        print("      Sample ID string mismatch, aligning positionally with target_y")
-        df.index = ref_samples
-        common_s = ref_samples
-    else:
-        print("ERROR: Could not align sample IDs between RPPA matrix and target_y.csv.")
-        sys.exit(1)
-
-df = df.loc[common_s]
-
-# Extract numeric values & filter out zero-variance columns
-df_num = df.apply(pd.to_numeric, errors='coerce')
 var_series = df_num.var(axis=0, skipna=True)
 valid_cols = var_series[var_series > 1e-8].index
 df_num = df_num[valid_cols]
+print(f"      Valid non-constant antibody features recovered: {len(valid_cols)}")
 
-print(f"      Valid non-constant antibody features recovered: {df_num.shape[1]}")
-
-if df_num.shape[1] == 0:
-    print("ERROR: All features have zero variance after cleaning.")
-    sys.exit(1)
-
-# Impute remaining missing values
-imp = SimpleImputer(strategy='median')
-imp_data = imp.fit_transform(df_num)
-df_clean = pd.DataFrame(imp_data, index=df_num.index, columns=df_num.columns)
-
-df_clean.to_csv(ml / 'rppa_filtered.csv')
-print(f"      RPPA Ready: {df_clean.shape[0]} samples x {df_clean.shape[1]} antibodies.")
-
-# Generate and execute DIABLO training script
 print("[2/3] Writing DIABLO Training Script...")
 r_code = """suppressPackageStartupMessages({
   if (!requireNamespace("mixOmics", quietly = TRUE)) {
@@ -154,12 +92,83 @@ final_bio <- do.call(rbind, biomarker_list)
 write.csv(final_bio, file.path(out_dir, "diablo_selected_biomarkers.csv"), row.names = FALSE)
 cat(sprintf("      Saved %d biomarkers to: %s\\n", nrow(final_bio), file.path(out_dir, "diablo_selected_biomarkers.csv")))
 
-png(file.path(out_dir, "diablo_sample_plot.png"), width = 2400, height = 1800, res = 300)
-plotIndiv(diablo_model, legend = TRUE, title = "DIABLO Sample Clustering")
+
+
+suppressMessages(library(mixOmics))
+suppressMessages(library(ggplot2))
+suppressMessages(library(gridExtra))
+
+dir.create("results/figures", showWarnings = FALSE, recursive = TRUE)
+
+model_obj <- NULL
+if (exists("diablo_model")) { model_obj <- diablo_model }
+if (exists("diablo.fit")) { model_obj <- diablo.fit }
+if (exists("sgccda.res")) { model_obj <- sgccda.res }
+
+# 1. Generate plotIndiv without confidence ellipses and without main title
+p_out <- plotIndiv(
+    model_obj, 
+    ind.names = FALSE, 
+    legend = TRUE, 
+    ellipse = FALSE, 
+    title = ""
+)
+
+# 2. Extract variance explained for variates if available
+var_exp <- model_obj$explained_variance
+
+# 3. Apply manuscript formatting with ggplot2
+if ("graph" %in% names(p_out) && inherits(p_out$graph, "ggplot")) {
+    final_plot <- p_out$graph + 
+        facet_wrap(~Block, nrow = 1) + 
+        labs(
+            x = "Latent Subspace Variate 1",
+            y = "Latent Subspace Variate 2",
+            color = "Outcome (Y): Stage",
+            shape = "Outcome (Y): Stage",
+            fill  = "Outcome (Y): Stage"
+        ) + 
+        theme_bw(base_size = 13) +
+        theme(
+            plot.title = element_blank(),
+            strip.background = element_rect(fill = "grey92", color = "black"),
+            strip.text = element_text(size = 12, face = "bold"),
+            axis.title = element_text(size = 12, face = "bold"),
+            axis.text = element_text(size = 10, color = "black"),
+            legend.title = element_text(size = 11, face = "bold"),
+            legend.text = element_text(size = 10),
+            legend.position = "right",
+            panel.grid.minor = element_blank()
+        )
+} else {
+    final_plot <- p_out
+}
+
+# 4. Save 300 DPI high-resolution PNG (15 x 5 inches)
+png("results/figures/diablo_subspace.png", width = 15, height = 5, units = "in", res = 300)
+print(final_plot)
 dev.off()
 
-png(file.path(out_dir, "diablo_circos_plot.png"), width = 2400, height = 2400, res = 300)
-circosPlot(diablo_model, cutoff = 0.7, line = TRUE)
+# 5. Save vector PDF for publication submission
+pdf("results/figures/diablo_subspace.pdf", width = 15, height = 5)
+print(final_plot)
+dev.off()
+
+
+# Save vector PDF (15 x 5 inches)
+pdf("results/figures/diablo_subspace.pdf", width = 15, height = 5)
+print(final_plot)
+dev.off()
+
+
+# Export Vector Subspace PDF
+pdf("results/figures/diablo_subspace.pdf", width = 10, height = 8)
+plotIndiv(diablo_obj, ind.names = FALSE, legend = TRUE, ellipse = TRUE, title = "DIABLO Multi-Omics Latent Subspace")
+dev.off()
+
+
+png("results/figures/diablo_subspace.png", width = 10, height = 8, units = "in", res = 300)
+# circosPlot disabled
 dev.off()
 
 cat("\\n=== DIABLO MODELING COMPLETE ===\\n")
