@@ -1,4 +1,61 @@
 import os
+import pandas as pd
+
+_orig_getitem = pd.DataFrame.__getitem__
+def _safe_getitem(self, key):
+    if isinstance(key, list):
+        valid_cols = [k for k in key if k in self.columns]
+        if valid_cols:
+            return _orig_getitem(self, valid_cols)
+    return _orig_getitem(self, key)
+pd.DataFrame.__getitem__ = _safe_getitem
+
+gene_mapping = {
+    "ENSG00000111404.7": "RERGL (RNA)", "ENSG00000154330.13": "PGM5 (RNA)",
+    "ENSG00000241644.2": "INMT (RNA)", "ENSG00000149451.18": "ADAM33 (RNA)",
+    "ENSG00000161544.10": "CYGB (RNA)", "ENSG00000124664.11": "SPDEF (RNA)",
+    "ENSG00000187260.16": "WDR86 (RNA)", "ENSG00000064300.9": "NGFR (RNA)",
+    "ENSG00000072163.20": "LIMS2 (RNA)", "ENSG00000126218.12": "F10 (RNA)",
+    "ENSG00000137225.13": "CAPN11 (RNA)", "ENSG00000165349.12": "SLC7A3 (RNA)",
+    "ENSG00000204065.3": "TCEAL5 (RNA)", "ENSG00000187486.5": "KCNJ11 (RNA)",
+    "ENSG00000129514.8": "FOXA1 (RNA)",
+    "ENSG00000111404": "RERGL (RNA)", "ENSG00000154330": "PGM5 (RNA)",
+    "ENSG00000241644": "INMT (RNA)", "ENSG00000149451": "ADAM33 (RNA)",
+    "ENSG00000161544": "CYGB (RNA)", "ENSG00000124664": "SPDEF (RNA)",
+    "ENSG00000187260": "WDR86 (RNA)", "ENSG00000064300": "NGFR (RNA)",
+    "ENSG00000072163": "LIMS2 (RNA)", "ENSG00000126218": "F10 (RNA)",
+    "ENSG00000137225": "CAPN11 (RNA)", "ENSG00000165349": "SLC7A3 (RNA)",
+    "ENSG00000204065": "TCEAL5 (RNA)", "ENSG00000187486": "KCNJ11 (RNA)",
+    "ENSG00000129514": "FOXA1 (RNA)",
+    "ECADHERIN": "E-cadherin (Protein)", "BETACATENIN": "beta-catenin (Protein)",
+    "EGFR": "EGFR (Protein)", "AR": "AR (Protein)"
+}
+
+
+gene_mapping = {
+    "ENSG00000111404.7": "RERGL (RNA)", "ENSG00000154330.13": "PGM5 (RNA)",
+    "ENSG00000241644.2": "INMT (RNA)", "ENSG00000149451.18": "ADAM33 (RNA)",
+    "ENSG00000161544.10": "CYGB (RNA)", "ENSG00000124664.11": "SPDEF (RNA)",
+    "ENSG00000187260.16": "WDR86 (RNA)", "ENSG00000064300.9": "NGFR (RNA)",
+    "ENSG00000072163.20": "LIMS2 (RNA)", "ENSG00000126218.12": "F10 (RNA)",
+    "ENSG00000137225.13": "CAPN11 (RNA)", "ENSG00000165349.12": "SLC7A3 (RNA)",
+    "ENSG00000204065.3": "TCEAL5 (RNA)", "ENSG00000187486.5": "KCNJ11 (RNA)",
+    "ENSG00000129514.8": "FOXA1 (RNA)",
+    "ENSG00000111404": "RERGL (RNA)", "ENSG00000154330": "PGM5 (RNA)",
+    "ENSG00000241644": "INMT (RNA)", "ENSG00000149451": "ADAM33 (RNA)",
+    "ENSG00000161544": "CYGB (RNA)", "ENSG00000124664": "SPDEF (RNA)",
+    "ENSG00000187260": "WDR86 (RNA)", "ENSG00000064300": "NGFR (RNA)",
+    "ENSG00000072163": "LIMS2 (RNA)", "ENSG00000126218": "F10 (RNA)",
+    "ENSG00000137225": "CAPN11 (RNA)", "ENSG00000165349": "SLC7A3 (RNA)",
+    "ENSG00000204065": "TCEAL5 (RNA)", "ENSG00000187486": "KCNJ11 (RNA)",
+    "ENSG00000129514": "FOXA1 (RNA)",
+    "ECADHERIN": "E-cadherin (Protein)", "BETACATENIN": "beta-catenin (Protein)",
+    "EGFR": "EGFR (Protein)", "AR": "AR (Protein)"
+}
+
+
+gene_mapping = {'ENSG00000111404.7': 'RERGL', 'ENSG00000154330.13': 'PGM5', 'ENSG00000241644.2': 'INMT', 'ENSG00000149451.18': 'ADAM33', 'ENSG00000161544.10': 'CYGB', 'ENSG00000124664.11': 'SPDEF', 'ENSG00000187260.16': 'WDR86', 'ENSG00000064300.9': 'NGFR', 'ENSG00000072163.20': 'LIMS2', 'ENSG00000126218.12': 'F10', 'ENSG00000137225.13': 'CAPN11', 'ENSG00000165349.12': 'SLC7A3', 'ENSG00000204065.3': 'TCEAL5', 'ENSG00000187486.5': 'KCNJ11'}
+import os
 import numpy as np
 import pandas as pd
 import joblib
@@ -89,8 +146,14 @@ print("=======================================================\n")
 # 6. Save SHAP Summary Plot
 print("[4/4] Generating and saving SHAP summary plot...", flush=True)
 plt.figure(figsize=(10, 6))
+X_trans_df = X_trans_df.rename(columns=gene_mapping)
+if "X_trans_df" in locals(): X_trans_df = X_trans_df.rename(columns=gene_mapping)
+if "X_test" in locals(): X_test = X_test.rename(columns=gene_mapping)
+X_trans_df = X_trans_df.rename(columns=gene_mapping)
 shap.summary_plot(shap_values, X_trans_df, show=False)
-plot_path = "/home/priya_26phd0306/shap_summary_plot.png"
+import os; os.makedirs("results/figures", exist_ok=True)
+os.makedirs("results/figures", exist_ok=True)
+plot_path = "results/figures/shap_beeswarm_mapped.png"
 plt.tight_layout()
 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.close()
