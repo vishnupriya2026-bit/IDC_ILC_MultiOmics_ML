@@ -18,3 +18,7 @@ metabric_fresh_validation/
 .vscode/
 .DS_Store
 *.log
+
+Rplots.pdf
+*.index
+import_summary.csv
