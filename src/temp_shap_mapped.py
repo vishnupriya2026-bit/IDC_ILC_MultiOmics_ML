@@ -1,3 +1,58 @@
+import os
+import pandas as pd
+
+_orig_getitem = pd.DataFrame.__getitem__
+def _safe_getitem(self, key):
+    if isinstance(key, list):
+        valid_cols = [k for k in key if k in self.columns]
+        if valid_cols:
+            return _orig_getitem(self, valid_cols)
+    return _orig_getitem(self, key)
+pd.DataFrame.__getitem__ = _safe_getitem
+
+gene_mapping = {
+    "RERGL (RNA)": "RERGL (RNA)", "PGM5 (RNA)": "PGM5 (RNA)",
+    "INMT (RNA)": "INMT (RNA)", "ADAM33 (RNA)": "ADAM33 (RNA)",
+    "CYGB (RNA)": "CYGB (RNA)", "SPDEF (RNA)": "SPDEF (RNA)",
+    "WDR86 (RNA)": "WDR86 (RNA)", "NGFR (RNA)": "NGFR (RNA)",
+    "LIMS2 (RNA)": "LIMS2 (RNA)", "F10 (RNA)": "F10 (RNA)",
+    "CAPN11 (RNA)": "CAPN11 (RNA)", "SLC7A3 (RNA)": "SLC7A3 (RNA)",
+    "TCEAL5 (RNA)": "TCEAL5 (RNA)", "KCNJ11 (RNA)": "KCNJ11 (RNA)",
+    "FOXA1 (RNA)": "FOXA1 (RNA)",
+    "RERGL (RNA)": "RERGL (RNA)", "PGM5 (RNA)": "PGM5 (RNA)",
+    "INMT (RNA)": "INMT (RNA)", "ADAM33 (RNA)": "ADAM33 (RNA)",
+    "CYGB (RNA)": "CYGB (RNA)", "SPDEF (RNA)": "SPDEF (RNA)",
+    "WDR86 (RNA)": "WDR86 (RNA)", "NGFR (RNA)": "NGFR (RNA)",
+    "LIMS2 (RNA)": "LIMS2 (RNA)", "F10 (RNA)": "F10 (RNA)",
+    "CAPN11 (RNA)": "CAPN11 (RNA)", "SLC7A3 (RNA)": "SLC7A3 (RNA)",
+    "TCEAL5 (RNA)": "TCEAL5 (RNA)", "KCNJ11 (RNA)": "KCNJ11 (RNA)",
+    "FOXA1 (RNA)": "FOXA1 (RNA)",
+    "E-cadherin (Protein)": "E-cadherin (Protein)", "beta-catenin (Protein)": "beta-catenin (Protein)",
+    "EGFR": "EGFR (Protein)", "AR": "AR (Protein)"
+}
+
+
+gene_mapping = {
+    "RERGL (RNA)": "RERGL (RNA)", "PGM5 (RNA)": "PGM5 (RNA)",
+    "INMT (RNA)": "INMT (RNA)", "ADAM33 (RNA)": "ADAM33 (RNA)",
+    "CYGB (RNA)": "CYGB (RNA)", "SPDEF (RNA)": "SPDEF (RNA)",
+    "WDR86 (RNA)": "WDR86 (RNA)", "NGFR (RNA)": "NGFR (RNA)",
+    "LIMS2 (RNA)": "LIMS2 (RNA)", "F10 (RNA)": "F10 (RNA)",
+    "CAPN11 (RNA)": "CAPN11 (RNA)", "SLC7A3 (RNA)": "SLC7A3 (RNA)",
+    "TCEAL5 (RNA)": "TCEAL5 (RNA)", "KCNJ11 (RNA)": "KCNJ11 (RNA)",
+    "FOXA1 (RNA)": "FOXA1 (RNA)",
+    "RERGL (RNA)": "RERGL (RNA)", "PGM5 (RNA)": "PGM5 (RNA)",
+    "INMT (RNA)": "INMT (RNA)", "ADAM33 (RNA)": "ADAM33 (RNA)",
+    "CYGB (RNA)": "CYGB (RNA)", "SPDEF (RNA)": "SPDEF (RNA)",
+    "WDR86 (RNA)": "WDR86 (RNA)", "NGFR (RNA)": "NGFR (RNA)",
+    "LIMS2 (RNA)": "LIMS2 (RNA)", "F10 (RNA)": "F10 (RNA)",
+    "CAPN11 (RNA)": "CAPN11 (RNA)", "SLC7A3 (RNA)": "SLC7A3 (RNA)",
+    "TCEAL5 (RNA)": "TCEAL5 (RNA)", "KCNJ11 (RNA)": "KCNJ11 (RNA)",
+    "FOXA1 (RNA)": "FOXA1 (RNA)",
+    "E-cadherin (Protein)": "E-cadherin (Protein)", "beta-catenin (Protein)": "beta-catenin (Protein)",
+    "EGFR": "EGFR (Protein)", "AR": "AR (Protein)"
+}
+
 
 gene_mapping = {'RERGL (RNA)': 'RERGL', 'PGM5 (RNA)': 'PGM5', 'INMT (RNA)': 'INMT', 'ADAM33 (RNA)': 'ADAM33', 'CYGB (RNA)': 'CYGB', 'SPDEF (RNA)': 'SPDEF', 'WDR86 (RNA)': 'WDR86', 'NGFR (RNA)': 'NGFR', 'LIMS2 (RNA)': 'LIMS2', 'F10 (RNA)': 'F10', 'CAPN11 (RNA)': 'CAPN11', 'SLC7A3 (RNA)': 'SLC7A3', 'TCEAL5 (RNA)': 'TCEAL5', 'KCNJ11 (RNA)': 'KCNJ11'}
 import os
@@ -91,8 +146,14 @@ print("=======================================================\n")
 # 6. Save SHAP Summary Plot
 print("[4/4] Generating and saving SHAP summary plot...", flush=True)
 plt.figure(figsize=(10, 6))
+X_trans_df = X_trans_df.rename(columns=gene_mapping)
+if "X_trans_df" in locals(): X_trans_df = X_trans_df.rename(columns=gene_mapping)
+if "X_test" in locals(): X_test = X_test.rename(columns=gene_mapping)
+X_trans_df = X_trans_df.rename(columns=gene_mapping)
 plt.figure(figsize=(10, 8)); shap.summary_plot(shap_values, X_trans_df, show=False)
-plot_path = "/home/priya_26phd0306/shap_summary_plot.png"
+import os; os.makedirs("results/figures", exist_ok=True)
+os.makedirs("results/figures", exist_ok=True)
+plot_path = "results/figures/shap_beeswarm_mapped.png"
 plt.tight_layout()
 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.close()
