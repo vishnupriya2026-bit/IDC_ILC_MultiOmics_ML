@@ -17,13 +17,13 @@ print("=" * 70)
 
 # 1. Define Top Discovered Biomarkers & Gene Symbol Mapping
 gene_mapping = {
-    'ECADHERIN': 'CDH1',
-    'BETACATENIN': 'CTNNB1',
+    'E-cadherin (Protein)': 'CDH1',
+    'beta-catenin (Protein)': 'CTNNB1',
     'EGFR': 'EGFR',
     'AR': 'AR',
     'MR1': 'MR1',
-    'ENSG00000111404.7': 'ILC1_RNA', # Representative mapped transcript
-    'ENSG00000154330.13': 'ILC2_RNA',
+    'RERGL (RNA)': 'ILC1_RNA', # Representative mapped transcript
+    'PGM5 (RNA)': 'ILC2_RNA',
     'cg17196051': 'CDH1_Meth'
 }
 

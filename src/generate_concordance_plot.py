@@ -24,9 +24,9 @@ if os.path.exists(nodes_path) and os.path.exists(edges_path):
 else:
     # Synthetic fallback matching project metrics
     data = {
-        'Feature_ID': ['ECADHERIN', 'BETACATENIN', 'ENSG00000111404.7', 'ENSG00000154330.13', 
-                      'AR', 'ENSG00000241644.2', 'ENSG00000149451.18', 'MR1', 'EGFR', 
-                      'ENSG00000161544.10', 'cg17196051', 'ENSG00000124664.11', 'ENSG00000187260.16'],
+        'Feature_ID': ['E-cadherin (Protein)', 'beta-catenin (Protein)', 'RERGL (RNA)', 'PGM5 (RNA)', 
+                      'AR', 'INMT (RNA)', 'ADAM33 (RNA)', 'MR1', 'EGFR', 
+                      'CYGB (RNA)', 'cg17196051', 'SPDEF (RNA)', 'WDR86 (RNA)'],
         'Mean_Absolute_SHAP': [0.1284, 0.0966, 0.0285, 0.0181, 0.0111, 0.0109, 0.0078, 0.0078, 0.0078, 0.0077, 0.0072, 0.0070, 0.0068],
         'Degree_Centrality': [14, 12, 4, 3, 8, 2, 3, 2, 10, 3, 1, 2, 2],
         'Omics_Modality': ['Proteomics (RPPA)', 'Proteomics (RPPA)', 'RNA-seq Transcriptomics', 'RNA-seq Transcriptomics',
@@ -67,7 +67,7 @@ plt.axhline(y=y_split, color='gray', linestyle='--', alpha=0.6, lw=1.5)
 # Annotate key features
 for _, row in df_nodes.iterrows():
     feat = row['Feature_ID']
-    if feat in ['ECADHERIN', 'BETACATENIN', 'AR', 'EGFR', 'ENSG00000111404.7', 'ENSG00000154330.13', 'cg17196051']:
+    if feat in ['E-cadherin (Protein)', 'beta-catenin (Protein)', 'AR', 'EGFR', 'RERGL (RNA)', 'PGM5 (RNA)', 'cg17196051']:
         plt.text(
             row['Degree_Centrality'] + 0.35, 
             row[shap_col] + 0.0015, 
