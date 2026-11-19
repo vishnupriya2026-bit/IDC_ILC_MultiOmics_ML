@@ -6,3 +6,5 @@ __pycache__/
 .DS_Store
 Rplots.pdf
 import_summary.csv
+data/
+brca_metabric/
